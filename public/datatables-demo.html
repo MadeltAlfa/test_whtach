@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<!-- Gak jadi bikin, hehe, ws kadung mumet -->
+
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataTables Server-Side Demo</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" rel="stylesheet">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+    <style>
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .btn-action {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-12">
+                <div class="table-container">
+                    <h2 class="mb-4">
+                        <i class="fas fa-table me-2"></i>Data Jenis Pegawai
+                    </h2>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <button class="btn btn-primary" onclick="showCreateModal()">
+                                <i class="fas fa-plus me-1"></i>Tambah Data
+                            </button>
+                        </div>
+                    </div>
+
+                    <table id="jenisPegawaiTable" class="table table-striped table-bordered" style="width:100%">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Jenis Pegawai</th>
+                                <th>Dibuat</th>
+                                <th>Diupdate</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="jenisPegawaiModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Tambah Jenis Pegawai</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="jenisPegawaiForm">
+                        <input type="hidden" id="editId">
+                        <div class="mb-3">
+                            <label for="jenis_pegawai" class="form-label">Jenis Pegawai *</label>
+                            <input type="text" class="form-control" id="jenis_pegawai" required>
+                            <div class="invalid-feedback" id="jenis_pegawai_error"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-primary" onclick="saveData()">Simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="deleteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Konfirmasi Hapus</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Apakah Anda yakin ingin menghapus data ini?</p>
+                    <p class="fw-bold" id="deleteItemName"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmDelete()">Hapus</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.bootstrap5.min.js"></script>
+
+    <script>
+        let dataTable;
+        let deleteId = null;
+        const apiBaseUrl = 'http://localhost:8000/api';
+
+        $(document).ready(function () {
+            initializeDataTable();
+        });
+
+        function initializeDataTable() {
+            dataTable = $('#jenisPegawaiTable').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: apiBaseUrl + '/jenis-pegawais',
+                    type: 'GET',
+                    dataType: 'json',
+                    dataSrc: 'data'
+                },
+                columns: [
+                    { data: 'id' },
+                    { data: 'jenis_pegawai' },
+                    {
+                        data: 'created_at',
+                        render: function (data) {
+                            return new Date(data).toLocaleString('id-ID');
+                        }
+                    },
+                    {
+                        data: 'updated_at',
+                        render: function (data) {
+                            return new Date(data).toLocaleString('id-ID');
+                        }
+                    },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: function (data) {
+                            return `
+                                <div class="btn-group">
+                                    <button class="btn btn-sm btn-warning btn-action" onclick="showEditModal(${data.id}, '${data.jenis_pegawai.replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger btn-action" onclick="showDeleteModal(${data.id}, '${data.jenis_pegawai.replace(/'/g, "\\'")}')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            `;
+                        }
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/id.json'
+                },
+                dom: '<"row"<"col-md-6"l><"col-md-6"f>>rt<"row"<"col-md-6"i><"col-md-6"p>>',
+                pageLength: 10,
+                order: [[0, 'desc']]
+            });
+        }
+
+        function showCreateModal() {
+            $('#modalTitle').text('Tambah Jenis Pegawai');
+            $('#editId').val('');
+            $('#jenis_pegawai').val('');
+            $('#jenis_pegawai_error').text('').hide();
+            $('#jenis_pegawai').removeClass('is-invalid');
+
+            const modal = new bootstrap.Modal(document.getElementById('jenisPegawaiModal'));
+            modal.show();
+        }
+
+        function showEditModal(id, jenisPegawai) {
+            $('#modalTitle').text('Edit Jenis Pegawai');
+            $('#editId').val(id);
+            $('#jenis_pegawai').val(jenisPegawai);
+            $('#jenis_pegawai_error').text('').hide();
+            $('#jenis_pegawai').removeClass('is-invalid');
+
+            const modal = new bootstrap.Modal(document.getElementById('jenisPegawaiModal'));
+            modal.show();
+        }
+
+        function showDeleteModal(id, jenisPegawai) {
+            deleteId = id;
+            $('#deleteItemName').text(jenisPegawai);
+
+            const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+            modal.show();
+        }
+
+        function saveData() {
+            const id = $('#editId').val();
+            const jenisPegawai = $('#jenis_pegawai').val();
+
+            $('#jenis_pegawai_error').text('').hide();
+            $('#jenis_pegawai').removeClass('is-invalid');
+
+            if (!jenisPegawai) {
+                $('#jenis_pegawai_error').text('Jenis pegawai harus diisi').show();
+                $('#jenis_pegawai').addClass('is-invalid');
+                return;
+            }
+
+            const url = id ? `${apiBaseUrl}/jenis-pegawais/${id}` : `${apiBaseUrl}/jenis-pegawais`;
+            const method = id ? 'PUT' : 'POST';
+
+            $.ajax({
+                url: url,
+                type: method,
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    jenis_pegawai: jenisPegawai
+                }),
+                success: function (response) {
+                    if (response.success) {
+                        $('#jenisPegawaiModal').modal('hide');
+                        dataTable.ajax.reload();
+                        showAlert('success', 'Data berhasil disimpan!');
+                    }
+                },
+                error: function (xhr) {
+                    if (xhr.status === 422) {
+                        const errors = xhr.responseJSON.errors;
+                        if (errors.jenis_pegawai) {
+                            $('#jenis_pegawai_error').text(errors.jenis_pegawai[0]).show();
+                            $('#jenis_pegawai').addClass('is-invalid');
+                        }
+                    } else {
+                        showAlert('danger', 'Terjadi kesalahan!');
+                    }
+                }
+            });
+        }
+
+        function confirmDelete() {
+            if (!deleteId) return;
+
+            $.ajax({
+                url: `${apiBaseUrl}/jenis-pegawais/${deleteId}`,
+                type: 'DELETE',
+                success: function (response) {
+                    if (response.success) {
+                        $('#deleteModal').modal('hide');
+                        dataTable.ajax.reload();
+                        showAlert('success', 'Data berhasil dihapus!');
+                    }
+                },
+                error: function () {
+                    showAlert('danger', 'Terjadi kesalahan saat menghapus!');
+                }
+            });
+        }
+
+        function showAlert(type, message) {
+            $('.alert').remove();
+
+            const alert = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+            $('.table-container').prepend(alert);
+
+            setTimeout(() => {
+                $('.alert').alert('close');
+            }, 3000);
+        }
+
+        setInterval(() => {
+            dataTable.ajax.reload(null, false);
+        }, 30000);
+    </script>
+</body>
+
+</html>
