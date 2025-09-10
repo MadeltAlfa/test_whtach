@@ -9,14 +9,14 @@
 
 
 ## URL Test
-http://localhost:8000/api/test
-http://localhost:8000/api/jenis-pegawais
-http://localhost:8000/api/status-pegawais
-http://localhost:8000/api/agamas
-http://localhost:8000/api/units
-http://localhost:8000/api/subunits
-http://localhost:8000/api/status-pegawais?jenis_pegawai_id=3
-http://localhost:8000/api/subunits?unit_id=1
+- http://localhost:8000/api/test
+- http://localhost:8000/api/jenis-pegawais
+- http://localhost:8000/api/status-pegawais
+- http://localhost:8000/api/agamas
+- http://localhost:8000/api/units
+- http://localhost:8000/api/subunits
+- http://localhost:8000/api/status-pegawais?jenis_pegawai_id=3
+- http://localhost:8000/api/subunits?unit_id=1
 
 ## About Laravel
 
